@@ -1,0 +1,226 @@
+#!/usr/bin/env python3
+"""Interactively organize files in a chosen folder."""
+
+from __future__ import annotations
+
+import shutil
+import sys
+from pathlib import Path
+
+
+COMMANDS = {"list", "skip", "quit"}
+
+
+def main() -> int:
+    print("BroomFolder")
+    print("Organize top-level files into folders. Type 'quit' anytime to stop.\n")
+
+    target = choose_directory()
+    if target is None:
+        return 1
+
+    files = discover_files(target)
+    if not files:
+        print(f"No top-level files to organize in {target}.")
+        return 0
+
+    print(f"\nOrganizing {len(files)} file(s) in {target}")
+    print("At each prompt, enter a folder name or command: list, skip, quit.\n")
+
+    moved = 0
+    skipped = 0
+
+    for file_path in files:
+        if not file_path.exists() or not file_path.is_file():
+            continue
+
+        print(f"File: {file_path.name}")
+        action = prompt_for_file_action(target)
+
+        if action == "quit":
+            print("Stopping.")
+            break
+
+        if action == "skip":
+            skipped += 1
+            print("Skipped.\n")
+            continue
+
+        destination_dir = action
+        destination_path = destination_dir / file_path.name
+
+        if destination_path.exists():
+            resolved = resolve_conflict(destination_path)
+            if resolved is None:
+                skipped += 1
+                print("Skipped to avoid overwriting.\n")
+                continue
+            destination_path = resolved
+
+        shutil.move(str(file_path), str(destination_path))
+        moved += 1
+        print(f"Moved to {destination_path.relative_to(target)}\n")
+
+    print(f"Done. Moved: {moved}. Skipped: {skipped}.")
+    return 0
+
+
+def choose_directory() -> Path | None:
+    while True:
+        raw = input("Folder to organize [current directory]: ").strip()
+        raw = raw or "."
+        candidate = expand_directory(raw)
+
+        if not candidate.exists():
+            print(f"Directory does not exist: {candidate}")
+            continue
+
+        if not candidate.is_dir():
+            print(f"Not a directory: {candidate}")
+            continue
+
+        return candidate
+
+
+def expand_directory(raw_path: str) -> Path:
+    return Path(raw_path).expanduser().resolve()
+
+
+def discover_files(target: Path) -> list[Path]:
+    return sorted(
+        (
+            path
+            for path in target.iterdir()
+            if path.is_file() and not path.name.startswith(".")
+        ),
+        key=lambda path: path.name.lower(),
+    )
+
+
+def prompt_for_file_action(target: Path) -> Path | str:
+    while True:
+        raw = input("Move to folder> ").strip()
+        command = raw.lower()
+
+        if command in COMMANDS:
+            if command == "list":
+                show_directories(target)
+                maybe_create_directory(target)
+                continue
+            return command
+
+        if not raw:
+            print("Enter a folder name, or use: list, skip, quit.")
+            continue
+
+        destination_dir = folder_inside_target(target, raw)
+        if destination_dir is None:
+            print("Folder names must stay inside the selected directory.")
+            continue
+
+        if not destination_dir.exists():
+            if ask_yes_no(f"Create folder '{destination_dir.relative_to(target)}'? [y/N] "):
+                destination_dir.mkdir(parents=True, exist_ok=True)
+            else:
+                print("Choose another folder.")
+                continue
+
+        if not destination_dir.is_dir():
+            print(f"Destination exists but is not a directory: {destination_dir}")
+            continue
+
+        return destination_dir
+
+
+def folder_inside_target(target: Path, raw_folder: str) -> Path | None:
+    folder = Path(raw_folder).expanduser()
+
+    if folder.is_absolute():
+        print("Use a folder name relative to the selected directory.")
+        return None
+
+    candidate = (target / folder).resolve()
+    try:
+        candidate.relative_to(target)
+    except ValueError:
+        return None
+    return candidate
+
+
+def show_directories(target: Path) -> None:
+    directories = sorted(
+        (path for path in target.iterdir() if path.is_dir() and not path.name.startswith(".")),
+        key=lambda path: path.name.lower(),
+    )
+
+    if not directories:
+        print("No directories yet.")
+        return
+
+    print("Directories:")
+    for directory in directories:
+        print(f"  - {directory.relative_to(target)}")
+
+
+def maybe_create_directory(target: Path) -> None:
+    if not ask_yes_no("Create a new directory? [y/N] "):
+        return
+
+    while True:
+        raw = input("New directory name: ").strip()
+        if not raw:
+            print("Directory name cannot be empty.")
+            continue
+
+        directory = folder_inside_target(target, raw)
+        if directory is None:
+            print("Directory must stay inside the selected directory.")
+            continue
+
+        if directory.exists():
+            if directory.is_dir():
+                print(f"Directory already exists: {directory.relative_to(target)}")
+                return
+            print(f"A file already exists at: {directory.relative_to(target)}")
+            continue
+
+        directory.mkdir(parents=True)
+        print(f"Created: {directory.relative_to(target)}")
+        return
+
+
+def resolve_conflict(destination_path: Path) -> Path | None:
+    print(f"Destination already exists: {destination_path.name}")
+
+    while True:
+        answer = input("Type 'skip' or 'rename': ").strip().lower()
+        if answer == "skip":
+            return None
+        if answer == "rename":
+            return next_available_path(destination_path)
+        print("Please type 'skip' or 'rename'.")
+
+
+def next_available_path(path: Path) -> Path:
+    stem = path.stem
+    suffix = path.suffix
+    parent = path.parent
+    counter = 2
+
+    while True:
+        candidate = parent / f"{stem} {counter}{suffix}"
+        if not candidate.exists():
+            return candidate
+        counter += 1
+
+
+def ask_yes_no(prompt: str) -> bool:
+    return input(prompt).strip().lower() in {"y", "yes"}
+
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main())
+    except KeyboardInterrupt:
+        print("\nStopped.")
+        raise SystemExit(130)
