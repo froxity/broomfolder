@@ -9,7 +9,7 @@ It opens with a terminal banner, asks which directory to work in, shows progress
 Run it from this repo:
 
 ```sh
-./bin/broomfolder
+python3 broomfolder.py
 ```
 
 At the prompt, choose a directory such as:
@@ -24,6 +24,7 @@ You can also pass the directory directly:
 
 ```sh
 broomfolder ~/Downloads
+python3 broomfolder.py ~/Downloads
 ```
 
 For each file, enter a folder name to move it there. You can also type:
@@ -43,25 +44,25 @@ The tool only processes top-level, non-hidden files. It does not recursively org
 - Progress display such as `[123/220 files] 56% | 97 left`
 - Optional directory argument like `broomfolder ~/Downloads`
 - Interactive `help` command inside a sorting session
-- Zsh command and directory completion support through the installer
+- Launchers for Linux, macOS, and Windows
+- Zsh command and directory completion support through the Unix installer
+
+## Requirements
+
+- Python 3.9 or newer
 
 ## Install
 
-Make the script executable:
+### macOS and Linux
 
 ```sh
 chmod +x bin/broomfolder
-```
-
-Install it as a command with the helper:
-
-```sh
 ./install.sh
 ```
 
-The installer also attempts to install zsh completion support.
+This installs the Unix launcher and also attempts to install zsh completion support.
 
-If macOS says you do not have permission, run:
+If `/usr/local/bin` is not writable, run:
 
 ```sh
 sudo ./install.sh
@@ -73,20 +74,52 @@ Or install it manually:
 ln -s "$(pwd)/bin/broomfolder" /usr/local/bin/broomfolder
 ```
 
-After that, run it from anywhere:
+### Windows
+
+Run the PowerShell installer:
+
+```powershell
+.\install.ps1
+```
+
+By default it installs `broomfolder.cmd` and `broomfolder.py` into:
+
+```text
+%USERPROFILE%\AppData\Local\Programs\broomfolder\bin
+```
+
+Make sure that directory is in your `PATH`.
+
+You can also run it directly from the repo:
+
+```powershell
+py -3 .\broomfolder.py
+py -3 .\broomfolder.py C:\Users\you\Downloads
+```
+
+## Running
+
+After installation, run it from anywhere:
 
 ```sh
 broomfolder
 broomfolder ~/Downloads
 ```
 
-If the command does not autocomplete right away in zsh, run:
+On Windows Command Prompt or PowerShell, use:
+
+```powershell
+broomfolder
+broomfolder C:\Users\you\Downloads
+```
+
+If zsh command completion does not activate right away on macOS or Linux, run:
 
 ```sh
 rehash
 ```
 
-If you install into `~/.local/bin`, make sure that directory is in your `PATH`.
+If you install into `~/.local/bin` on Unix, make sure that directory is in your `PATH`.
 
 If you install completions into `~/.zsh/completions`, make sure your `~/.zshrc` includes:
 
