@@ -1,0 +1,9 @@
+#compdef broomfolder
+
+_broomfolder() {
+  _arguments \
+    '1:directory:_files -/' \
+    '*: :_files'
+}
+
+_broomfolder "$@"

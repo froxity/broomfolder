@@ -2,7 +2,7 @@
 
 `broomfolder` is a dependency-free Python command that helps you organize a folder interactively.
 
-It asks which directory to work in, reviews each top-level file, and moves files into folders you choose.
+It opens with a terminal banner, asks which directory to work in, shows progress while you sort, and moves top-level files into folders you choose.
 
 ## Usage
 
@@ -20,13 +20,30 @@ At the prompt, choose a directory such as:
 /Users/you/Downloads
 ```
 
+You can also pass the directory directly:
+
+```sh
+broomfolder ~/Downloads
+```
+
 For each file, enter a folder name to move it there. You can also type:
 
+- `help` to show the in-session command guide
 - `list` to show existing directories and optionally create a new one
 - `skip` to leave the current file where it is
 - `quit` to stop
 
+After `help`, `list`, or a validation retry, the prompt reminds you which file is still being organized so you do not need to scroll back up.
+
 The tool only processes top-level, non-hidden files. It does not recursively organize subfolders.
+
+## Features
+
+- Startup banner and built-in command summary
+- Progress display such as `[123/220 files] 56% | 97 left`
+- Optional directory argument like `broomfolder ~/Downloads`
+- Interactive `help` command inside a sorting session
+- Zsh command and directory completion support through the installer
 
 ## Install
 
@@ -41,6 +58,8 @@ Install it as a command with the helper:
 ```sh
 ./install.sh
 ```
+
+The installer also attempts to install zsh completion support.
 
 If macOS says you do not have permission, run:
 
@@ -58,6 +77,21 @@ After that, run it from anywhere:
 
 ```sh
 broomfolder
+broomfolder ~/Downloads
 ```
 
-If `/usr/local/bin` is not in your `PATH`, add it to your shell profile.
+If the command does not autocomplete right away in zsh, run:
+
+```sh
+rehash
+```
+
+If you install into `~/.local/bin`, make sure that directory is in your `PATH`.
+
+If you install completions into `~/.zsh/completions`, make sure your `~/.zshrc` includes:
+
+```sh
+fpath=("$HOME/.zsh/completions" $fpath)
+autoload -Uz compinit
+compinit
+```
