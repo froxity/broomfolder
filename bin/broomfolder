@@ -30,10 +30,13 @@ def main() -> int:
     moved = 0
     skipped = 0
 
-    for file_path in files:
+    total_files = len(files)
+
+    for index, file_path in enumerate(files, start=1):
         if not file_path.exists() or not file_path.is_file():
             continue
 
+        print(format_progress(index, total_files))
         print(f"File: {file_path.name}")
         action = prompt_for_file_action(target)
 
@@ -95,6 +98,12 @@ def discover_files(target: Path) -> list[Path]:
         ),
         key=lambda path: path.name.lower(),
     )
+
+
+def format_progress(current: int, total: int) -> str:
+    percent = round((current / total) * 100)
+    remaining = total - current
+    return f"[{current}/{total} files] {percent}% | {remaining} left"
 
 
 def prompt_for_file_action(target: Path) -> Path | str:
